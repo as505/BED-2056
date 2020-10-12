@@ -94,6 +94,7 @@ fin_df2 <- bind_rows(Oslo, Viken, Trøndelag, Rogaland, Innlandet, Troms_og_Finn
 
 ## Data Plot
 Regions without data not shown:
+
 ```{r plot, echo=FALSE, warning=FALSE, message=FALSE}
 # Remove year to improve plot readability
 test1 <- fin_df %>%
@@ -107,7 +108,7 @@ ggplot() +
   geom_line(data=test1, aes(x=Dato, y=kumulativ, group = Fylke), color='green') + 
   geom_line(data=test2, aes(x=Dato, y=kumulativ, group = Fylke), color='red') + 
   scale_x_discrete(breaks=as.numeric(seq(1, 7, 1))) + # Hack that stops x-axis from being filled with lines for each individual day
-  ggtitle("“Commencement of liquidation proceedings” by region; 2019 (Green) VS 2020 (Red)") +
+  ggtitle("“Commencement of liquidation proceedings” 2019 (Green) VS 2020 (Red)") +
   ylab("Cumulative Amount") + xlab("Time period: 01.April - 30.August") + facet_wrap(~Fylke)
 ```
 
