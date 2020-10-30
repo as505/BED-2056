@@ -1,0 +1,177 @@
+---
+title: "A7"
+output: html_document
+date: "`r format(Sys.time(), '%d.%m.%Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Assignment 7
+
+```{r functions, echo=FALSE, warning=FALSE, message=FALSE}
+# function to get average weight for specific sex in a data frame
+average_weight <- function(df, char) {
+  out <- df %>%
+    filter(sex == char) %>%     # sort by sex
+    group_by(birth_month) %>%   
+    filter(weight < 9999) %>%   # ignore no-data
+    mutate(average = mean(weight))
+  return(out)
+}
+
+# function to generate plot of average weight given a data frame and year
+plot_weight_func <- function(df, char) {
+  df %>%
+    ggplot(aes(x=birth_month, y=average, group = sex)) +
+    geom_line(aes(color=sex)) +
+    scale_x_continuous(name="Month", breaks=(seq(1, 12, 1)), limits = c(1, 12)) +
+    expand_limits(y = c(3100, 3400)) +  # Ensures y-axis is similar between different plots, without removing any data
+    ylab(expression("Weight in grams")) +
+    labs(title = "Average birth weight",
+         subtitle = char)
+}
+
+# function to find proportion between F/M in data frame
+proportion_sex <- function(df) {
+  # count total number of occurrences per sex
+  tbl <- df %>%
+    group_by(birth_month) %>%
+    count(sex)
+  
+  # find proportion between F (n[1]) and M (n[2])
+  out <- tbl %>%
+    group_by(birth_month) %>%
+    mutate(pro = n[1]/n[2]) %>%
+    select(birth_month, pro) %>%    # keep only month and proportion
+    filter(row_number() %% 2 != 0)  # remove duplicate rows
+  
+  return(out)
+}
+
+# proportion between F/M by day of week
+proportion_sex_week <- function(df) {
+  # count total number of occurrences per sex
+  tbl <- df %>%
+    group_by(birth_month, day_of_week) %>%
+    count(sex)
+  
+  # find proportion between F (n[1]) and M (n[2])
+  out <- tbl %>%
+    group_by(birth_month, day_of_week) %>%
+    mutate(pro = n[1]/n[2]) %>%
+    select(birth_month, pro) %>%    # keep only month and proportion
+    filter(row_number() %% 2 != 0)  # remove duplicate rows
+  
+  return(out)
+}
+
+# function to plot proportion between F/M given data frame and year
+plot_pro_func <- function(df, char) {
+  df %>%
+    ggplot(aes(x = birth_month, y = pro)) + 
+    geom_line() +
+    scale_x_continuous(name="Month", breaks=(seq(1, 12, 1)), limits = c(1, 12)) +
+    expand_limits(y = c(0.940, 0.970)) +  # Ensures y-axis is similar between different plots, without removing any data
+    ylab(expression("")) +
+    labs(title = "Number of Girls per Boy",
+         subtitle = char)
+}
+
+# function to plot proportion between F/M by day of week, given data frame and year
+plot_proWeek_func <- function(df, char) {
+  
+  df %>%
+    ggplot(aes(x = birth_month, y = pro, group = day_of_week)) + 
+    geom_line(aes(color = factor(day_of_week))) +
+    scale_x_continuous(name="Month", breaks=(seq(1, 12, 1)), limits = c(1, 12)) +
+    expand_limits(y = c(0.940, 0.970)) +  # Ensures y-axis is similar between different plots, without removing any data
+    ylab(expression("")) +
+    scale_color_discrete(name = "Day of the Week", labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")) +                                                   
+    labs(title = "Number of Girls per Boy",
+         subtitle = char)
+}
+
+```
+
+```{r main, echo=FALSE, warning=FALSE, message=FALSE}
+# Extract data from files year by year, assuming unzipped text files are available
+df_2017 <- data.frame(read_fwf("Nat2017PublicUS.c20180516.r20180808.txt", fwf_cols(birth_month = c(13, 14), sex = 475, weight = c(504, 507), day_of_week = 23, year = c(8, 12))))                                                                                      
+df_2018 <- data.frame(read_fwf("Nat2018PublicUS.c20190509.r20190717.txt", fwf_cols(birth_month = c(13, 14), sex = 475, weight = c(504, 507), day_of_week = 23, year = c(8, 12)))) 
+df_2019 <- data.frame(read_fwf("Nat2019PublicUS.c20200506.r20200915.txt", fwf_cols(birth_month = c(13, 14), sex = 475, weight = c(504, 507), day_of_week = 23, year = c(8, 12))))
+
+# Fix data types
+df_17 <- df_2017 %>%
+  mutate(birth_month = as.numeric(birth_month), weight = as.numeric(weight))
+
+df_18 <- df_2018 %>%
+  mutate(birth_month = as.numeric(birth_month), weight = as.numeric(weight))
+
+df_19 <- df_2019 %>%
+  mutate(birth_month = as.numeric(birth_month), weight = as.numeric(weight))
+
+# average weight month by month, by gender, per year
+df_M <- average_weight(df_17, "M")
+df_F <- average_weight(df_17, "F")
+df_final_17 <- bind_rows(df_M, df_F)
+
+df_M <- average_weight(df_18, "M")
+df_F <- average_weight(df_18, "F")
+df_final_18 <- bind_rows(df_M, df_F)
+
+df_M <- average_weight(df_19, "M")
+df_F <- average_weight(df_19, "F")
+df_final_19 <- bind_rows(df_M, df_F)
+
+# Prepare data frames for plot
+pro17 <- proportion_sex(df_final_17)
+pro18 <- proportion_sex(df_final_18)
+pro19 <- proportion_sex(df_final_19)
+proW_17 <- proportion_sex_week(df_final_17)
+proW_18 <- proportion_sex_week(df_final_18)
+proW_19 <- proportion_sex_week(df_final_19)
+```
+
+```{r plot, echo=FALSE, warning=FALSE, message=FALSE}
+# 1
+plot_pro_func(pro17, "2017")
+plot_pro_func(pro18, "2018")
+plot_pro_func(pro19, "2019")
+
+# 2
+plot_weight_func(df_final_17, "2017")
+plot_weight_func(df_final_18, "2018")
+plot_weight_func(df_final_19, "2019")
+
+# 3
+plot_proWeek_func(proW_17, "2017")
+plot_proWeek_func(proW_18, "2018")
+plot_proWeek_func(proW_19, "2019")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
