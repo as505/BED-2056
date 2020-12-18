@@ -1,0 +1,297 @@
+---
+title: "Covid 19 and Traffic"
+output: html_document
+date: "`r format(Sys.time(), 'Last updated: %d.%m.%Y')`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+### Introduction
+
+Following the guidelines to stay at home as much as possible during the pandemic, the number of people working from their homes have increased dramatically throughout the year. In Norway, traffic data is very easy to obtain from Vegvesenet. This makes it possible to look at traffic data to see how traffic has been affected by the virus.
+
+The data used in this document comes from 161 traffic measuring stations located in Tromsø, Bergen and Oslo, and is used to showcase how 2020 differs from previous years
+
+```{r data, echo=FALSE}
+# Raw data
+df_raw <- read.csv2("full_mdt_2018_2020.csv", check.names = FALSE)
+
+# Relevant data
+tmp <- df_raw %>%
+  filter(Felt == "Totalt") %>%
+  select(Navn, År, Måned, `Antall døgn total`, `Antall døgn ugyldig`, "<5,6m" = `< 5,6m`, ">=5,6m" = `>= 5,6m`, "5,6m-7,6m" = `5,6m - 7,6m`, "7,6m-12,5m" = `7,6m - 12,5m`, "12,5m-16,0m" = `12,5m - 16,0m`, "16,0m-24,0m" = `16,0m - 24,0m`, ">=24,0m" = `>= 24,0m`) %>%                           
+  mutate(År = as.factor(År))
+
+# Separate by year, calculate average values
+df_2018 <- tmp %>%
+  filter(År == 2018) %>%
+  group_by(Måned) %>%
+  mutate(Av1 = mean(`<5,6m`)) %>%
+  mutate(Av2 = mean(`>=5,6m`)) %>%
+  mutate(Av3 = mean(`5,6m-7,6m`)) %>%
+  mutate(Av4 = mean(`7,6m-12,5m`)) %>%
+  mutate(Av5 = mean(`12,5m-16,0m`)) %>%
+  mutate(Av6 = mean(`16,0m-24,0m`)) %>%
+  mutate(Av7 = mean(`>=24,0m`))
+
+df_2019 <- tmp %>%
+  filter(År == 2019) %>%
+  group_by(Måned) %>%
+  mutate(Av1 = mean(`<5,6m`)) %>%
+  mutate(Av2 = mean(`>=5,6m`)) %>%
+  mutate(Av3 = mean(`5,6m-7,6m`)) %>%
+  mutate(Av4 = mean(`7,6m-12,5m`)) %>%
+  mutate(Av5 = mean(`12,5m-16,0m`)) %>%
+  mutate(Av6 = mean(`16,0m-24,0m`)) %>%
+  mutate(Av7 = mean(`>=24,0m`))
+
+df_2020 <- tmp %>%
+  filter(År == 2020) %>%
+  group_by(Måned) %>%
+  mutate(Av1 = mean(`<5,6m`)) %>%
+  mutate(Av2 = mean(`>=5,6m`)) %>%
+  mutate(Av3 = mean(`5,6m-7,6m`)) %>%
+  mutate(Av4 = mean(`7,6m-12,5m`)) %>%
+  mutate(Av5 = mean(`12,5m-16,0m`)) %>%
+  mutate(Av6 = mean(`16,0m-24,0m`)) %>%
+  mutate(Av7 = mean(`>=24,0m`))
+```
+
+```{r plot func, echo=FALSE}
+mult_diff <- function(Input_df){
+  output <- Input_df %>%
+    select(Måned, År, 13:19) %>%
+    filter(Måned <= 11) %>%
+    group_by(Måned) %>%
+    mutate(Differ = Av1 - lag(Av1)) %>%
+    unique() %>%
+    mutate(Differ = abs(Differ)) %>%
+    mutate(Differ2 = Av2 - lag(Av2)) %>%
+    unique() %>%
+    mutate(Differ2 = abs(Differ2)) %>%
+    mutate(Differ3 = Av3 - lag(Av3)) %>%
+    unique() %>%
+    mutate(Differ3 = abs(Differ3)) %>%
+    mutate(Differ4 = Av4 - lag(Av4)) %>%
+    unique() %>%
+    mutate(Differ4 = abs(Differ4)) %>%
+    mutate(Differ5 = Av5 - lag(Av5)) %>%
+    unique() %>%
+    mutate(Differ5 = abs(Differ5)) %>%
+    mutate(Differ6 = Av6 - lag(Av6)) %>%
+    unique() %>%
+    mutate(Differ6 = abs(Differ6)) %>%
+    mutate(Differ7 = Av7 - lag(Av7)) %>%
+    unique() %>%
+    mutate(Differ7 = abs(Differ7)) %>%
+    filter(Differ > 0, Differ2 > 0, Differ3 > 0, Differ4 > 0, Differ5 > 0, Differ6 > 0, Differ7 > 0)
+  
+    return(output)
+}
+
+mult_diff_2 <- function(Input_df){
+  output <- Input_df %>%
+    filter(Måned <= 11) %>%
+    group_by(Måned) %>%
+    mutate(Differ = Differ - lag(Differ)) %>%
+    unique() %>%
+    mutate(Differ = abs(Differ)) %>%
+    mutate(Differ2 = Differ2 - lag(Differ2)) %>%
+    unique() %>%
+    mutate(Differ2 = abs(Differ2)) %>%
+    mutate(Differ3 = Differ3 - lag(Differ3)) %>%
+    unique() %>%
+    mutate(Differ3 = abs(Differ3)) %>%
+    mutate(Differ4 = Differ4 - lag(Differ4)) %>%
+    unique() %>%
+    mutate(Differ4 = abs(Differ4)) %>%
+    mutate(Differ5 = Differ5 - lag(Differ5)) %>%
+    unique() %>%
+    mutate(Differ5 = abs(Differ5)) %>%
+    mutate(Differ6 = Differ6 - lag(Differ6)) %>%
+    unique() %>%
+    mutate(Differ6 = abs(Differ6)) %>%
+    mutate(Differ7 = Differ7 - lag(Differ7)) %>%
+    unique() %>%
+    mutate(Differ7 = abs(Differ7)) %>%
+    filter(Differ > 0, Differ2 > 0, Differ3 > 0, Differ4 > 0, Differ5 > 0, Differ6 > 0, Differ7 > 0)
+  
+  return(output)
+}
+
+test <- bind_rows(df_2018, df_2019, df_2020)
+test2 <- bind_rows(df_2019, df_2020)
+test3 <- bind_rows(df_2018, df_2019)
+
+diff <- mult_diff(test2) %>%
+  mutate(År = "2019/2020")
+diff2 <- mult_diff(test3) %>%
+  mutate(År = "2018/2019")
+
+diff_plot <- bind_rows(diff2, diff)
+diff_test_2 <- mult_diff_2(diff_plot) %>%
+  mutate(År = "2020")
+```
+
+### Smaler cars 
+
+```{r plot,echo=FALSE}
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av1, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles < 5,6m in length", color = "Year")
+
+```
+
+Looking at the data for passenger cars, a clear decrease in traffic can be seen during the months of the initial wave. Traffic seems to return to normal after the initial wave.
+
+### Other vehicle groups
+
+```{r Other, echo=FALSE, fig.show="hold", out.width="50%"}
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av2, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles >= 5,6m in length", color = "Year")
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av3, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 5,6-7,6m in length", color = "Year")
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av4, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 7,6-12,5m in length", color = "Year")
+```
+
+There does not seem to be any significant impact from covid on the amount of vehicles sizes 5,6-12,5m in length. Vehicles sizes 12,5-16m does seem to be less present on urban roads following the initial wave.
+
+### 12,5-16m
+
+```{r Odd, echo=FALSE}
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av5, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 12,5-16m in length", color = "Year")
+```
+
+Vehicles length 12,5-16m can be seen experiencing the same dip in April as smaller cars, however they do no return to normal after the first wave. While their usage increases a bit after the wave, the amount of vehicles this size seems to be noticeably reduced throughout the rest of the year. Additionally, as a fun little tidbit, the line representing their usage in 2019 is the only line in any of the graphs so far not to have a dip in July.
+
+### Vehicles length 16m and up
+
+```{r Large_Vehicles, echo=FALSE}
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av6, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 16-24m in length", color = "Year")
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av7, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles > 24m in length", color = "Year")
+```
+
+Large vehicles see a large increase towards the end of the year, likely due to an increase in online shopping. The increase in packages ordered has been written about by several media outlets, as it has led to multiple stores and post offices being overwhelmed with packages to be picked up.
+
+### Graphing changes in traffic
+
+One ting the graphs so far has shown, is that traffic is changing slightly year by year. To better visualize the impact covid has had on traffic this year, it is important to compare that impact to the changes normally seen in traffic.
+
+The following graph compares the traffic data for a given year with the same data the year before. The y-axis represents how much the data differs from the previous year. A value of 0 means the data is the same, while a higher value means a greater difference, positive or negative.
+
+```{r Test, echo=FALSE}
+ggplot() +
+  geom_line(data = diff_plot, aes(x = Måned, y = Differ, group = År, color = År)) +
+  scale_x_continuous(breaks=diff_plot$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "Vehicles < 5,6m in length", color = "Year")
+```
+
+The graph shows that March, April and May 2020 differ significantly from the same months in 2019. To further illustrate, we can compare the 2019/2020 difference with the 2018/2019 difference. The result is the following graph with a single line showcasing how 2020 differs from 2019 compared to the changes seen going from 2018 to 2019. This can give a better idea of what differences are unique to 2020, as opposed to expected yearly changes.
+
+```{r Test_2, echo=FALSE}
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "2020")
+```
+
+### Large Vehicles
+
+Creating similar graphs for vehicles sizes 16m or longer clearly visualizes the increase of these vehicles towards the later months of the year.
+
+```{r Test_3, echo=FALSE, fig.show="hold", out.width="50%"}
+ggplot() +
+  geom_line(data = diff_plot, aes(x = Måned, y = Differ6, group = År, color = År)) +
+  scale_x_continuous(breaks=diff_plot$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "Vehicles 16-24m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ6)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "2020")
+
+ggplot() +
+  geom_line(data = diff_plot, aes(x = Måned, y = Differ7, group = År, color = År)) +
+  scale_x_continuous(breaks=diff_plot$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "Vehicles > 24m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ7)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference in amount of vehicles", title = "2020")
+```
+
+### Compared to first graph
+
+The "difference graphs" from above shows the hot-spots where traffic from 2020 differ from previous years
+
+```{r Test_4, echo=FALSE, fig.show="hold", out.width="50%"}
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av1, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles < 5,6m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "2020")
+
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av5, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 12,5-16m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ5)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "2020")
+
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av6, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles 16-24m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ6)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference (amount of vehicles)", title = "2020")
+
+test %>%
+  ggplot() +
+  geom_line(aes(x = Måned, y = Av7, group = År, color = År)) +
+  scale_x_continuous(breaks=test$Måned, name = "Month") +
+  labs(y = "Vehicles counted", title = "Vehicles > 24m in length", color = "Year")
+ggplot() +
+  geom_line(data = diff_test_2, aes(x = Måned, y = Differ7)) +
+  scale_x_continuous(breaks=diff$Måned, name = "Month") +
+  labs(y = "Difference in amount of vehicles", title = "2020")
+```
+
+
+
+
