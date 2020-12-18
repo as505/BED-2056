@@ -1,4 +1,5 @@
 library(tidyverse)
+library(lubridate)
 # Org dataset
 df_test <- read.csv2("C:\\Users\\as505\\Desktop\\BED-1234\\Data_project\\696902851_mdt_2018_2020.csv", check.names = FALSE)
 df_test <- read.csv2("./Data_project\\696902851_mdt_2018_2020.csv", check.names = FALSE)
@@ -17,7 +18,7 @@ tmp <- df_test%>%
   filter(Felt == "Totalt") %>%
   select(Navn, År, Måned, `Antall døgn total`, `Antall døgn ugyldig`, "<5,6m" = `< 5,6m`, ">=5,6m" = `>= 5,6m`, "5,6m-7,6m" = `5,6m - 7,6m`, "7,6m-12,5m" = `7,6m - 12,5m`, "12,5m-16,0m" = `12,5m - 16,0m`, "16,0m-24,0m" = `16,0m - 24,0m`, ">=24,0m" = `>= 24,0m`) %>%                           
   mutate(År = as.factor(År))
-  
+
 tmp
 colnames(tmp)
 
@@ -55,15 +56,21 @@ df_2020 <- tmp %>%
   mutate(Av7 = mean(`>=24,0m`))
   
 df_2018 %>%
-  ggplot() +
-  geom_line(aes(x = Måned, y = Av1)) +
-  geom_line(aes(x = Måned, y = Av2)) +
-  geom_line(aes(x = Måned, y = Av3)) +
-  geom_line(aes(x = Måned, y = Av4)) +
-  geom_line(aes(x = Måned, y = Av5)) +
-  geom_line(aes(x = Måned, y = Av6)) +
-  geom_line(aes(x = Måned, y = Av7)) +
-  scale_x_continuous(breaks = df_2018$Måned, name = "Måned")
+  ggplot(aes(x=month(Måned, label=TRUE, abbr=TRUE), y = df_2018$Av1)) +
+  geom_line(x = df_2018$Måned) +
+  geom_point() 
+  # geom_line(aes(x = Måned, y = Av2)) +
+  # geom_line(aes(x = Måned, y = Av3)) +
+  # geom_line(aes(x = Måned, y = Av4)) +
+  # geom_line(aes(x = Måned, y = Av5)) +
+  # geom_line(aes(x = Måned, y = Av6)) +
+  # geom_line(aes(x = Måned, y = Av7))
+
+month1 <- month.abb
+month1
+month.abb
+month2 <- month.abb
+month2 <- c(strsplit(month.abb, " ")[[1]])
 
 test <- bind_rows(df_2018, df_2019, df_2020)
 test2 <- bind_rows(df_2019, df_2020)
@@ -83,7 +90,7 @@ test %>%
   geom_line(aes(x = Måned, y = Av5, group = År, color = År)) +
   geom_line(aes(x = Måned, y = Av6, group = År, color = År)) +
   geom_line(aes(x = Måned, y = Av7, group = År, color = År)) +
-  scale_x_continuous(breaks=test$Måned, name = "Måned")
+  scale_x_continuous(breaks=month2, name = "Måned")
 
 mult_diff <- function(Input_df){
   output <- Input_df %>%
